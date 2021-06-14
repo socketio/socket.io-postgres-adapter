@@ -1,0 +1,62 @@
+# Socket.IO Postgres adapter
+
+The `@socket.io/postgres-adapter` package allows broadcasting packets between multiple Socket.IO servers.
+
+![Adapter diagram](./assets/adapter.png)
+
+Supported features:
+
+- [broadcasting](https://socket.io/docs/v4/broadcasting-events/)
+- [utility methods](https://socket.io/docs/v4/server-instance/#Utility-methods)
+  - [`socketsJoin`](https://socket.io/docs/v4/server-instance/#socketsJoin)
+  - [`socketsLeave`](https://socket.io/docs/v4/server-instance/#socketsLeave)
+  - [`disconnectSockets`](https://socket.io/docs/v4/server-instance/#disconnectSockets)
+  - [`fetchSockets`](https://socket.io/docs/v4/server-instance/#fetchSockets)
+  - [`serverSideEmit`](https://socket.io/docs/v4/server-instance/#serverSideEmit)
+
+**Table of contents**
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [License](#license)
+
+## Installation
+
+```
+npm install @socket.io/postgres-adapter pg
+```
+
+For TypeScript users, you might also need `@types/pg`.
+
+## Usage
+
+```js
+const { Server } = require("socket.io");
+const { createAdapter } = require("@socket.io/postgres-adapter");
+const { Pool } = require("pg");
+
+const io = new Server();
+
+const pool = new Pool({
+  user: "postgres",
+  host: "localhost",
+  database: "postgres",
+  password: "changeit",
+  port: 5432,
+});
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS events (
+      id          bigserial UNIQUE,
+      created_at  timestamptz DEFAULT NOW(),
+      payload     bytea
+  );
+`);
+
+io.adapter(createAdapter(pool));
+io.listen(3000);
+```
+
+## License
+
+[MIT](LICENSE)

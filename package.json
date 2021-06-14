@@ -1,0 +1,44 @@
+{
+  "name": "@socket.io/postgres-adapter",
+  "version": "0.0.1",
+  "description": "The Socket.IO Postgres adapter, allowing to broadcast events between several Socket.IO servers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:socketio/socket.io-postgres-adapter.git"
+  },
+  "files": [
+    "dist/"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "npm run format:check && tsc && nyc mocha --require ts-node/register test/index.ts",
+    "format:check": "prettier --parser typescript --check 'lib/**/*.ts' 'test/**/*.ts'",
+    "format:fix": "prettier --parser typescript --write 'lib/**/*.ts' 'test/**/*.ts'",
+    "prepack": "tsc"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "~2.7.0",
+    "debug": "~4.3.1",
+    "socket.io-adapter": "~2.3.0"
+  },
+  "devDependencies": {
+    "@types/expect.js": "^0.3.29",
+    "@types/mocha": "^8.2.1",
+    "@types/node": "^14.14.7",
+    "@types/pg": "^8.6.0",
+    "expect.js": "0.3.1",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
+    "pg": "^8.6.0",
+    "prettier": "^2.1.2",
+    "socket.io": "^4.1.1",
+    "socket.io-client": "^4.1.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.0.5"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  }
+}
