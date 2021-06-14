@@ -14,6 +14,14 @@ Supported features:
   - [`fetchSockets`](https://socket.io/docs/v4/server-instance/#fetchSockets)
   - [`serverSideEmit`](https://socket.io/docs/v4/server-instance/#serverSideEmit)
 
+Related packages:
+
+- Postgres emitter: https://github.com/socketio/socket.io-postgres-emitter/
+- Redis adapter: https://github.com/socketio/socket.io-redis-adapter/
+- Redis emitter: https://github.com/socketio/socket.io-redis-emitter/
+- MongoDB adapter: https://github.com/socketio/socket.io-mongo-adapter/
+- MongoDB emitter: https://github.com/socketio/socket.io-mongo-emitter/
+
 **Table of contents**
 
 - [Installation](#installation)
