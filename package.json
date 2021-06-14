@@ -1,6 +1,6 @@
 {
   "name": "@socket.io/postgres-adapter",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The Socket.IO Postgres adapter, allowing to broadcast events between several Socket.IO servers",
   "license": "MIT",
   "repository": {
