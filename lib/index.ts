@@ -422,7 +422,10 @@ export class PostgresAdapter extends Adapter {
         document.type,
         this.channel
       );
-      await this.pool.query(`NOTIFY "${this.channel}", '${payload}'`);
+      await this.pool.query(`SELECT pg_notify($1, $2)`, [
+        this.channel,
+        payload,
+      ]);
 
       this.scheduleHeartbeat();
     } catch (err) {
@@ -448,7 +451,7 @@ export class PostgresAdapter extends Adapter {
       type: document.type,
       attachmentId,
     });
-    this.pool.query(`NOTIFY "${this.channel}", '${headerPayload}'`);
+    this.pool.query(`SELECT pg_notify($1, $2)`, [this.channel, headerPayload]);
   }
 
   /**
