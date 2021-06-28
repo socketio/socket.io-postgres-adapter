@@ -54,7 +54,7 @@ const pool = new Pool({
 });
 
 pool.query(`
-  CREATE TABLE IF NOT EXISTS events (
+  CREATE TABLE IF NOT EXISTS socket_io_attachments (
       id          bigserial UNIQUE,
       created_at  timestamptz DEFAULT NOW(),
       payload     bytea
