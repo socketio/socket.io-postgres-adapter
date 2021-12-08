@@ -59,6 +59,10 @@ pool.query(`
   );
 `);
 
+pool.on("error", (err) => {
+  console.error("Postgres error", err);
+});
+
 io.adapter(createAdapter(pool));
 io.listen(3000);
 ```
