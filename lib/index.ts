@@ -80,6 +80,7 @@ export interface PostgresAdapterOptions {
   channelPrefix: string;
   /**
    * The name of the table for payloads over the 8000 bytes limit or containing binary data
+   * @default "socket_io_attachments"
    */
   tableName: string;
   /**
@@ -107,6 +108,11 @@ export interface PostgresAdapterOptions {
    * @default 30000
    */
   cleanupInterval: number;
+  /**
+   * Handler for errors. If undefined, it will terminate the process when an error occurs (see https://nodejs.org/api/events.html#error-events).
+   * @default undefined
+   */
+  errorHandler: (err: any) => void | undefined
 }
 
 /**
@@ -122,7 +128,11 @@ export function createAdapter(
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
   return function (nsp) {
-    return new PostgresAdapter(nsp, pool, opts);
+    const postgresAdapter = new PostgresAdapter(nsp, pool, opts);
+    if (opts.errorHandler) {
+      postgresAdapter.on("error", opts.errorHandler);
+    }
+    return postgresAdapter;
   };
 }
 
