@@ -31,10 +31,8 @@ Related packages:
 ## Installation
 
 ```
-npm install @socket.io/postgres-adapter pg
+npm install @socket.io/postgres-adapter
 ```
-
-For TypeScript users, you might also need `@types/pg`.
 
 ## Usage
 
