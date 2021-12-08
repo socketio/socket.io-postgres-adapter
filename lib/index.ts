@@ -1,6 +1,7 @@
 import { Adapter, BroadcastOptions, Room } from "socket.io-adapter";
 import { randomBytes } from "crypto";
 import { encode, decode } from "@msgpack/msgpack";
+import { Pool } from "pg";
 
 const randomId = () => randomBytes(8).toString("hex");
 const debug = require("debug")("socket.io-postgres-adapter");
@@ -118,7 +119,7 @@ export interface PostgresAdapterOptions {
  * @public
  */
 export function createAdapter(
-  pool: any,
+  pool: Pool,
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
   return function (nsp: any) {
@@ -136,7 +137,7 @@ export class PostgresAdapter extends Adapter {
   public payloadThreshold: number;
   public cleanupInterval: number;
 
-  private readonly pool: any;
+  private readonly pool: Pool;
   private client: any;
   private nodesMap: Map<string, number> = new Map<string, number>(); // uid => timestamp of last message
   private heartbeatTimer: NodeJS.Timeout | undefined;
@@ -152,7 +153,11 @@ export class PostgresAdapter extends Adapter {
    *
    * @public
    */
-  constructor(nsp: any, pool: any, opts: Partial<PostgresAdapterOptions> = {}) {
+  constructor(
+    nsp: any,
+    pool: Pool,
+    opts: Partial<PostgresAdapterOptions> = {}
+  ) {
     super(nsp);
     this.pool = pool;
     this.uid = opts.uid || randomId();
