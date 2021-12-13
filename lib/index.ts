@@ -171,8 +171,8 @@ export class PostgresAdapter extends Adapter {
     this.heartbeatTimeout = opts.heartbeatTimeout || 10000;
     this.payloadThreshold = opts.payloadThreshold || 8000;
     this.cleanupInterval = opts.cleanupInterval || 30000;
-    const defaultErrorHandler = (err: any) => this.emit("error", err);
-    this.errorHandler = opts.errorHandler || defaultErrorHandler
+    const defaultErrorHandler = (err: any) => debug(err);
+    this.errorHandler = opts.errorHandler || defaultErrorHandler;
 
     this.initSubscription();
     this.publish({
