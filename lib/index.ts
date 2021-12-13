@@ -127,7 +127,7 @@ export function createAdapter(
   pool: any,
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
-  return function (nsp) {
+  return function (nsp: any) {
     return new PostgresAdapter(nsp, pool, opts);
   };
 }
