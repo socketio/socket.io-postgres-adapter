@@ -36,7 +36,7 @@ interface Request {
  */
 const EMITTER_UID = "emitter";
 
-const hasBinary = (obj: any, toJSON?: boolean) => {
+const hasBinary = (obj: any, toJSON?: boolean): boolean => {
   if (!obj || typeof obj !== "object") {
     return false;
   }
@@ -121,7 +121,7 @@ export function createAdapter(
   pool: any,
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
-  return function (nsp) {
+  return function (nsp: any) {
     return new PostgresAdapter(nsp, pool, opts);
   };
 }
@@ -194,7 +194,7 @@ export class PostgresAdapter extends Adapter {
       debug("client listening to %s", this.channel);
       await client.query(`LISTEN "${this.channel}"`);
 
-      client.on("notification", async (msg) => {
+      client.on("notification", async (msg: any) => {
         try {
           await this.onEvent(msg.payload);
         } catch (err) {
