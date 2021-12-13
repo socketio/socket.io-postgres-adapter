@@ -62,6 +62,11 @@ pool.query(`
 `);
 
 io.adapter(createAdapter(pool));
+
+pool.on("error", (err) => {
+  // ...
+});
+
 io.listen(3000);
 ```
 

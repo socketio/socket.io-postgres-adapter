@@ -198,7 +198,7 @@ export class PostgresAdapter extends Adapter {
         try {
           await this.onEvent(msg.payload);
         } catch (err) {
-          this.emit("error", err);
+          debug("an error has occurred while handling the notification");
         }
       });
 
@@ -213,7 +213,6 @@ export class PostgresAdapter extends Adapter {
 
       this.client = client;
     } catch (err) {
-      this.emit("error", err);
       debug("error while initializing client, scheduling reconnection...");
       this.scheduleReconnection();
     }
@@ -391,7 +390,7 @@ export class PostgresAdapter extends Adapter {
           `DELETE FROM ${this.tableName} WHERE created_at < now() - interval '${this.cleanupInterval} milliseconds'`
         );
       } catch (err) {
-        this.emit("error", err);
+        debug("an error has occurred while cleaning up old payloads");
       }
       this.scheduleCleanup();
     }, this.cleanupInterval);
@@ -426,11 +425,11 @@ export class PostgresAdapter extends Adapter {
         this.channel,
         payload,
       ]);
-
-      this.scheduleHeartbeat();
     } catch (err) {
-      this.emit("error", err);
+      debug("an error has occurred while publishing a new notification");
     }
+
+    this.scheduleHeartbeat();
   }
 
   private async publishWithAttachment(document: any) {
