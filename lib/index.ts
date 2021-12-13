@@ -127,12 +127,8 @@ export function createAdapter(
   pool: any,
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
-  return function (nsp: any) {
-    const postgresAdapter = new PostgresAdapter(nsp, pool, opts);
-    if (opts.errorHandler) {
-      postgresAdapter.on("error", opts.errorHandler);
-    }
-    return postgresAdapter;
+  return function (nsp) {
+    return new PostgresAdapter(nsp, pool, opts);
   };
 }
 
@@ -145,6 +141,7 @@ export class PostgresAdapter extends Adapter {
   public heartbeatTimeout: number;
   public payloadThreshold: number;
   public cleanupInterval: number;
+  public errorHandler: (err: any) => void;
 
   private readonly pool: any;
   private client: any;
@@ -174,6 +171,8 @@ export class PostgresAdapter extends Adapter {
     this.heartbeatTimeout = opts.heartbeatTimeout || 10000;
     this.payloadThreshold = opts.payloadThreshold || 8000;
     this.cleanupInterval = opts.cleanupInterval || 30000;
+    const defaultErrorHandler = (err: any) => this.emit("error", err);
+    this.errorHandler = opts.errorHandler || defaultErrorHandler
 
     this.initSubscription();
     this.publish({
@@ -208,7 +207,7 @@ export class PostgresAdapter extends Adapter {
         try {
           await this.onEvent(msg.payload);
         } catch (err) {
-          this.emit("error", err);
+          this.errorHandler(err);
         }
       });
 
@@ -223,7 +222,7 @@ export class PostgresAdapter extends Adapter {
 
       this.client = client;
     } catch (err) {
-      this.emit("error", err);
+      this.errorHandler(err);
       debug("error while initializing client, scheduling reconnection...");
       this.scheduleReconnection();
     }
@@ -401,7 +400,7 @@ export class PostgresAdapter extends Adapter {
           `DELETE FROM ${this.tableName} WHERE created_at < now() - interval '${this.cleanupInterval} milliseconds'`
         );
       } catch (err) {
-        this.emit("error", err);
+        this.errorHandler(err);
       }
       this.scheduleCleanup();
     }, this.cleanupInterval);
@@ -439,7 +438,7 @@ export class PostgresAdapter extends Adapter {
 
       this.scheduleHeartbeat();
     } catch (err) {
-      this.emit("error", err);
+      this.errorHandler(err);
     }
   }
 
