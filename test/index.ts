@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket as ServerSocket } from "socket.io";
 import { io as ioc, Socket as ClientSocket } from "socket.io-client";
 import expect = require("expect.js");
-import { createAdapter, PostgresAdapter } from "..";
+import { createAdapter, PostgresAdapter } from "../lib";
 import type { AddressInfo } from "net";
 import { times, sleep } from "./util";
 import { Pool } from "pg";
@@ -175,6 +175,91 @@ describe("@socket.io/postgres-adapter", () => {
 
       servers[0].local.emit("test");
     });
+
+    it("broadcasts with multiple acknowledgements", (done) => {
+      clientSockets[0].on("test", (cb) => {
+        cb(1);
+      });
+
+      clientSockets[1].on("test", (cb) => {
+        cb(2);
+      });
+
+      clientSockets[2].on("test", (cb) => {
+        cb(3);
+      });
+
+      servers[0].timeout(500).emit("test", (err: Error, responses: any[]) => {
+        expect(err).to.be(null);
+        expect(responses).to.contain(1);
+        expect(responses).to.contain(2);
+        expect(responses).to.contain(3);
+
+        setTimeout(() => {
+          // @ts-ignore
+          expect(servers[0].of("/").adapter.ackRequests.size).to.eql(0);
+
+          done();
+        }, 500);
+      });
+    });
+
+    it("broadcasts with multiple acknowledgements (binary content)", (done) => {
+      clientSockets[0].on("test", (cb) => {
+        cb(Buffer.from([1]));
+      });
+
+      clientSockets[1].on("test", (cb) => {
+        cb(Buffer.from([2]));
+      });
+
+      clientSockets[2].on("test", (cb) => {
+        cb(Buffer.from([3]));
+      });
+
+      servers[0].timeout(500).emit("test", (err: Error, responses: any[]) => {
+        expect(err).to.be(null);
+        responses.forEach((response) => {
+          expect(Buffer.isBuffer(response)).to.be(true);
+        });
+
+        done();
+      });
+    });
+
+    it("broadcasts with multiple acknowledgements (no client)", (done) => {
+      servers[0]
+        .to("abc")
+        .timeout(500)
+        .emit("test", (err: Error, responses: any[]) => {
+          expect(err).to.be(null);
+          expect(responses).to.eql([]);
+
+          done();
+        });
+    });
+
+    it("broadcasts with multiple acknowledgements (timeout)", (done) => {
+      clientSockets[0].on("test", (cb) => {
+        cb(1);
+      });
+
+      clientSockets[1].on("test", (cb) => {
+        cb(2);
+      });
+
+      clientSockets[2].on("test", (cb) => {
+        // do nothing
+      });
+
+      servers[0].timeout(500).emit("test", (err: Error, responses: any[]) => {
+        expect(err).to.be.an(Error);
+        expect(responses).to.contain(1);
+        expect(responses).to.contain(2);
+
+        done();
+      });
+    });
   });
 
   describe("socketsJoin", () => {
@@ -281,7 +366,7 @@ describe("@socket.io/postgres-adapter", () => {
     });
 
     it("returns a single socket instance", async () => {
-      serverSockets[1].data = "test";
+      serverSockets[1].data = "test" as any;
 
       const [remoteSocket] = await servers[0]
         .in(serverSockets[1].id)
