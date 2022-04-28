@@ -125,6 +125,8 @@ export interface PostgresAdapterOptions {
   errorHandler: (err: Error) => void;
 }
 
+const defaultErrorHandler = (err: Error) => debug(err);
+
 /**
  * Returns a function that will create a PostgresAdapter instance.
  *
@@ -137,8 +139,104 @@ export function createAdapter(
   pool: Pool,
   opts: Partial<PostgresAdapterOptions> = {}
 ) {
+  const errorHandler = opts.errorHandler || defaultErrorHandler;
+  const tableName = opts.tableName || "socket_io_attachments";
+  const cleanupInterval = opts.cleanupInterval || 30000;
+
+  const channelToAdapters = new Map<string, PostgresAdapter>();
+  let isConnectionInProgress = false;
+  let client: any;
+  let cleanupTimer: NodeJS.Timer;
+
+  const scheduleReconnection = () => {
+    const reconnectionDelay = Math.floor(2000 * (0.5 + Math.random()));
+    setTimeout(initClient, reconnectionDelay);
+  };
+
+  const initClient = async () => {
+    try {
+      debug("fetching client from the pool");
+      client = await pool.connect();
+      isConnectionInProgress = false;
+
+      for (const [channel] of channelToAdapters) {
+        debug("client listening to %s", channel);
+        await client.query(`LISTEN "${channel}"`);
+      }
+
+      client.on("notification", async (msg: any) => {
+        try {
+          await channelToAdapters.get(msg.channel)?.onEvent(msg.payload);
+        } catch (err) {
+          errorHandler(err);
+        }
+      });
+
+      client.on("error", () => {
+        debug("client error");
+      });
+
+      client.on("end", () => {
+        debug("client was closed, scheduling reconnection...");
+        scheduleReconnection();
+      });
+    } catch (err) {
+      errorHandler(err);
+      debug("error while initializing client, scheduling reconnection...");
+      scheduleReconnection();
+    }
+  };
+
+  const scheduleCleanup = () => {
+    cleanupTimer = setTimeout(async () => {
+      try {
+        await pool.query(
+          `DELETE FROM ${tableName} WHERE created_at < now() - interval '${cleanupInterval} milliseconds'`
+        );
+      } catch (err) {
+        errorHandler(err);
+      }
+      scheduleCleanup();
+    }, cleanupInterval);
+  };
+
   return function (nsp: any) {
-    return new PostgresAdapter(nsp, pool, opts);
+    let adapter = new PostgresAdapter(nsp, pool, opts);
+
+    channelToAdapters.set(adapter.channel, adapter);
+
+    if (isConnectionInProgress) {
+      // nothing to do
+    } else if (client) {
+      debug("client listening to %s", adapter.channel);
+      client.query(`LISTEN "${adapter.channel}"`).catch(errorHandler);
+    } else {
+      isConnectionInProgress = true;
+      initClient();
+
+      scheduleCleanup();
+    }
+
+    const defaultClose = adapter.close;
+
+    adapter.close = () => {
+      channelToAdapters.delete(adapter.channel);
+
+      if (channelToAdapters.size === 0) {
+        if (client) {
+          client.removeAllListeners("end");
+          client.release();
+          client = null;
+        }
+        if (cleanupTimer) {
+          clearTimeout(cleanupTimer);
+        }
+      }
+
+      defaultClose.call(adapter);
+    };
+
+    return adapter;
   };
 }
 
@@ -150,14 +248,11 @@ export class PostgresAdapter extends Adapter {
   public heartbeatInterval: number;
   public heartbeatTimeout: number;
   public payloadThreshold: number;
-  public cleanupInterval: number;
   public errorHandler: (err: Error) => void;
 
   private readonly pool: Pool;
-  private client: any;
   private nodesMap: Map<string, number> = new Map<string, number>(); // uid => timestamp of last message
   private heartbeatTimer: NodeJS.Timeout | undefined;
-  private cleanupTimer: NodeJS.Timeout | undefined;
   private requests: Map<string, Request> = new Map();
   private ackRequests: Map<string, AckRequest> = new Map();
 
@@ -185,15 +280,11 @@ export class PostgresAdapter extends Adapter {
     this.heartbeatInterval = opts.heartbeatInterval || 5000;
     this.heartbeatTimeout = opts.heartbeatTimeout || 10000;
     this.payloadThreshold = opts.payloadThreshold || 8000;
-    this.cleanupInterval = opts.cleanupInterval || 30000;
-    const defaultErrorHandler = (err: Error) => debug(err);
     this.errorHandler = opts.errorHandler || defaultErrorHandler;
 
-    this.initSubscription();
     this.publish({
       type: EventType.INITIAL_HEARTBEAT,
     });
-    this.scheduleCleanup();
   }
 
   close(): Promise<void> | void {
@@ -201,53 +292,6 @@ export class PostgresAdapter extends Adapter {
     if (this.heartbeatTimer) {
       clearTimeout(this.heartbeatTimer);
     }
-    if (this.cleanupTimer) {
-      clearTimeout(this.cleanupTimer);
-    }
-    if (this.client) {
-      this.client.removeAllListeners("end");
-      this.client.release();
-      this.client = null;
-    }
-  }
-
-  private async initSubscription() {
-    try {
-      debug("fetching client from the pool");
-      const client = await this.pool.connect();
-      debug("client listening to %s", this.channel);
-      await client.query(`LISTEN "${this.channel}"`);
-
-      client.on("notification", async (msg: any) => {
-        try {
-          await this.onEvent(msg.payload);
-        } catch (err) {
-          this.errorHandler(err);
-        }
-      });
-
-      client.on("error", () => {
-        debug("client error");
-      });
-
-      client.on("end", () => {
-        debug("client was closed, scheduling reconnection...");
-        this.scheduleReconnection();
-      });
-
-      this.client = client;
-    } catch (err) {
-      this.errorHandler(err);
-      debug("error while initializing client, scheduling reconnection...");
-      this.scheduleReconnection();
-    }
-  }
-
-  private scheduleReconnection() {
-    const reconnectionDelay = Math.floor(2000 * (0.5 + Math.random()));
-    setTimeout(() => {
-      this.initSubscription();
-    }, reconnectionDelay);
   }
 
   public async onEvent(event: any) {
@@ -449,19 +493,6 @@ export class PostgresAdapter extends Adapter {
       });
       this.scheduleHeartbeat();
     }, this.heartbeatInterval);
-  }
-
-  private scheduleCleanup() {
-    this.cleanupTimer = setTimeout(async () => {
-      try {
-        await this.pool.query(
-          `DELETE FROM ${this.tableName} WHERE created_at < now() - interval '${this.cleanupInterval} milliseconds'`
-        );
-      } catch (err) {
-        this.errorHandler(err);
-      }
-      this.scheduleCleanup();
-    }, this.cleanupInterval);
   }
 
   private async publish(document: any) {
