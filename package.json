@@ -22,8 +22,10 @@
     "@msgpack/msgpack": "~2.8.0",
     "@types/pg": "^8.6.6",
     "debug": "~4.3.4",
-    "pg": "^8.9.0",
-    "socket.io-adapter": "~2.5.2"
+    "pg": "^8.9.0"
+  },
+  "peerDependencies": {
+    "socket.io-adapter": "^2.4.0"
   },
   "devDependencies": {
     "@types/expect.js": "^0.3.29",
