@@ -4,7 +4,7 @@ import { io as ioc, Socket as ClientSocket } from "socket.io-client";
 import expect = require("expect.js");
 import { createAdapter, PostgresAdapter } from "../lib";
 import type { AddressInfo } from "net";
-import { times, sleep } from "./util";
+import { times, sleep, shouldNotHappen } from "./util";
 import { Pool } from "pg";
 
 const NODES_COUNT = 3;
@@ -126,17 +126,9 @@ describe("@socket.io/postgres-adapter", () => {
     it("broadcasts to all clients in a room", (done) => {
       serverSockets[1].join("room1");
 
-      clientSockets[0].on("test", () => {
-        done(new Error("should not happen"));
-      });
-
-      clientSockets[1].on("test", () => {
-        done();
-      });
-
-      clientSockets[2].on("test", () => {
-        done(new Error("should not happen"));
-      });
+      clientSockets[0].on("test", shouldNotHappen(done));
+      clientSockets[1].on("test", () => done());
+      clientSockets[2].on("test", shouldNotHappen(done));
 
       servers[0].to("room1").emit("test");
     });
@@ -145,49 +137,25 @@ describe("@socket.io/postgres-adapter", () => {
       const partialDone = times(2, done);
       serverSockets[1].join("room1");
 
-      clientSockets[0].on("test", () => {
-        partialDone();
-      });
-
-      clientSockets[1].on("test", () => {
-        done(new Error("should not happen"));
-      });
-
-      clientSockets[2].on("test", () => {
-        partialDone();
-      });
+      clientSockets[0].on("test", () => partialDone());
+      clientSockets[1].on("test", shouldNotHappen(done));
+      clientSockets[2].on("test", () => partialDone());
 
       servers[0].of("/").except("room1").emit("test");
     });
 
     it("broadcasts to local clients only", (done) => {
-      clientSockets[0].on("test", () => {
-        done();
-      });
-
-      clientSockets[1].on("test", () => {
-        done(new Error("should not happen"));
-      });
-
-      clientSockets[2].on("test", () => {
-        done(new Error("should not happen"));
-      });
+      clientSockets[0].on("test", () => done());
+      clientSockets[1].on("test", shouldNotHappen(done));
+      clientSockets[2].on("test", shouldNotHappen(done));
 
       servers[0].local.emit("test");
     });
 
     it("broadcasts with multiple acknowledgements", (done) => {
-      clientSockets[0].on("test", (cb) => {
-        cb(1);
-      });
-
-      clientSockets[1].on("test", (cb) => {
-        cb(2);
-      });
-
-      clientSockets[2].on("test", (cb) => {
-        cb(3);
-      });
+      clientSockets[0].on("test", (cb) => cb(1));
+      clientSockets[1].on("test", (cb) => cb(2));
+      clientSockets[2].on("test", (cb) => cb(3));
 
       servers[0].timeout(500).emit("test", (err: Error, responses: any[]) => {
         expect(err).to.be(null);
@@ -205,17 +173,9 @@ describe("@socket.io/postgres-adapter", () => {
     });
 
     it("broadcasts with multiple acknowledgements (binary content)", (done) => {
-      clientSockets[0].on("test", (cb) => {
-        cb(Buffer.from([1]));
-      });
-
-      clientSockets[1].on("test", (cb) => {
-        cb(Buffer.from([2]));
-      });
-
-      clientSockets[2].on("test", (cb) => {
-        cb(Buffer.from([3]));
-      });
+      clientSockets[0].on("test", (cb) => cb(Buffer.from([1])));
+      clientSockets[1].on("test", (cb) => cb(Buffer.from([2])));
+      clientSockets[2].on("test", (cb) => cb(Buffer.from([3])));
 
       servers[0].timeout(500).emit("test", (err: Error, responses: any[]) => {
         expect(err).to.be(null);
@@ -240,15 +200,9 @@ describe("@socket.io/postgres-adapter", () => {
     });
 
     it("broadcasts with multiple acknowledgements (timeout)", (done) => {
-      clientSockets[0].on("test", (cb) => {
-        cb(1);
-      });
-
-      clientSockets[1].on("test", (cb) => {
-        cb(2);
-      });
-
-      clientSockets[2].on("test", (cb) => {
+      clientSockets[0].on("test", (cb) => cb(1));
+      clientSockets[1].on("test", (cb) => cb(2));
+      clientSockets[2].on("test", (_cb) => {
         // do nothing
       });
 
@@ -390,9 +344,7 @@ describe("@socket.io/postgres-adapter", () => {
 
       servers[0].serverSideEmit("hello", "world", 1, "2");
 
-      servers[0].on("hello", () => {
-        done(new Error("should not happen"));
-      });
+      servers[0].on("hello", shouldNotHappen(done));
 
       servers[1].on("hello", (arg1, arg2, arg3) => {
         expect(arg1).to.eql("world");
@@ -401,9 +353,7 @@ describe("@socket.io/postgres-adapter", () => {
         partialDone();
       });
 
-      servers[2].of("/").on("hello", () => {
-        partialDone();
-      });
+      servers[2].of("/").on("hello", () => partialDone());
     });
 
     it("sends an event and receives a response from the other server instances", (done) => {
@@ -415,17 +365,9 @@ describe("@socket.io/postgres-adapter", () => {
         done();
       });
 
-      servers[0].on("hello", () => {
-        done(new Error("should not happen"));
-      });
-
-      servers[1].on("hello", (cb) => {
-        cb(2);
-      });
-
-      servers[2].on("hello", (cb) => {
-        cb("3");
-      });
+      servers[0].on("hello", shouldNotHappen(done));
+      servers[1].on("hello", (cb) => cb(2));
+      servers[2].on("hello", (cb) => cb("3"));
     });
 
     it("sends an event but timeout if one server does not respond", (done) => {
@@ -440,14 +382,8 @@ describe("@socket.io/postgres-adapter", () => {
         done();
       });
 
-      servers[0].on("hello", () => {
-        done(new Error("should not happen"));
-      });
-
-      servers[1].on("hello", (cb) => {
-        cb(2);
-      });
-
+      servers[0].on("hello", shouldNotHappen(done));
+      servers[1].on("hello", (cb) => cb(2));
       servers[2].on("hello", () => {
         // do nothing
       });
