@@ -377,8 +377,7 @@ describe("@socket.io/postgres-adapter", () => {
       expect(remoteSocket.rooms.size).to.eql(1);
     });
 
-    // TODO needs to be fixed in the `socket.io` package
-    it.skip("returns only local socket instances", async () => {
+    it("returns only local socket instances", async () => {
       const sockets = await servers[0].local.fetchSockets();
 
       expect(sockets).to.have.length(1);
