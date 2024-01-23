@@ -2,7 +2,10 @@
 
 The `@socket.io/postgres-adapter` package allows broadcasting packets between multiple Socket.IO servers.
 
-![Adapter diagram](./assets/adapter.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/adapter_dark.png">
+  <img alt="Diagram of Socket.IO packets forwarded through PostgreSQL" src="./assets/adapter.png">
+</picture>
 
 Supported features:
 
