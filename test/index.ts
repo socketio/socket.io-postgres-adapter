@@ -214,6 +214,27 @@ describe("@socket.io/postgres-adapter", () => {
         done();
       });
     });
+
+    it("broadcasts with a single acknowledgement (local)", async () => {
+      clientSockets[0].on("test", () => expect().fail());
+      clientSockets[1].on("test", (cb) => cb(2));
+      clientSockets[2].on("test", () => expect().fail());
+
+      const response = await serverSockets[1].emitWithAck("test");
+      expect(response).to.eql(2);
+    });
+
+    it("broadcasts with a single acknowledgement (remote)", async () => {
+      clientSockets[0].on("test", () => expect().fail());
+      clientSockets[1].on("test", (cb) => cb(2));
+      clientSockets[2].on("test", () => expect().fail());
+
+      const sockets = await servers[0].in(serverSockets[1].id).fetchSockets();
+      expect(sockets.length).to.eql(1);
+
+      const response = await sockets[0].timeout(500).emitWithAck("test");
+      expect(response).to.eql(2);
+    });
   });
 
   describe("socketsJoin", () => {
