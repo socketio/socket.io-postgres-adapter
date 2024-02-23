@@ -13,10 +13,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "compile": "rimraf ./dist && tsc",
     "test": "npm run format:check && tsc && nyc mocha --require ts-node/register test/index.ts",
     "format:check": "prettier --parser typescript --check lib/**/*.ts test/**/*.ts",
     "format:fix": "prettier --parser typescript --write lib/**/*.ts test/**/*.ts",
-    "prepack": "tsc"
+    "prepack": "npm run compile"
   },
   "dependencies": {
     "@msgpack/msgpack": "~2.8.0",
@@ -35,6 +36,7 @@
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "prettier": "^2.8.3",
+    "rimraf": "^5.0.5",
     "socket.io": "^4.6.0",
     "socket.io-client": "^4.6.1",
     "ts-node": "^10.9.1",
