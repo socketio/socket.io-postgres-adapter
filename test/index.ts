@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket as ServerSocket } from "socket.io";
 import { io as ioc, Socket as ClientSocket } from "socket.io-client";
 import expect = require("expect.js");
-import { createAdapter, PostgresAdapter } from "../lib";
+import { createAdapter } from "../lib";
 import type { AddressInfo } from "net";
 import { times, sleep, shouldNotHappen } from "./util";
 import { Pool } from "pg";
@@ -328,6 +328,22 @@ describe("@socket.io/postgres-adapter", () => {
 
       servers[0].disconnectSockets();
     });
+
+    it("sends a packet before all socket instances disconnect", (done) => {
+      const partialDone = times(3, done);
+
+      clientSockets.forEach((clientSocket) => {
+        clientSocket.on("disconnect", shouldNotHappen(done));
+
+        clientSocket.on("bye", () => {
+          clientSocket.off("disconnect");
+          clientSocket.on("disconnect", partialDone);
+        });
+      });
+
+      servers[0].emit("bye");
+      servers[0].disconnectSockets(true);
+    });
   });
 
   describe("fetchSockets", () => {
@@ -391,13 +407,11 @@ describe("@socket.io/postgres-adapter", () => {
       servers[2].on("hello", (cb) => cb("3"));
     });
 
-    it("sends an event but timeout if one server does not respond", (done) => {
-      (servers[0].of("/").adapter as PostgresAdapter).requestsTimeout = 200;
+    it("sends an event but timeout if one server does not respond", function (done) {
+      this.timeout(6000);
 
       servers[0].serverSideEmit("hello", (err: Error, response: any) => {
-        expect(err.message).to.be(
-          "timeout reached: only 1 responses received out of 2"
-        );
+        expect(err.message).to.be("timeout reached: missing 1 responses");
         expect(response).to.be.an(Array);
         expect(response).to.contain(2);
         done();
@@ -407,6 +421,21 @@ describe("@socket.io/postgres-adapter", () => {
       servers[1].on("hello", (cb) => cb(2));
       servers[2].on("hello", () => {
         // do nothing
+      });
+    });
+
+    it("succeeds even if an instance leaves the cluster", (done) => {
+      servers[0].on("hello", shouldNotHappen(done));
+      servers[1].on("hello", (cb) => cb(2));
+      servers[2].on("hello", () => {
+        servers[2].of("/").adapter.close();
+      });
+
+      servers[0].serverSideEmit("hello", (err: Error, response: any) => {
+        expect(err).to.be(null);
+        expect(response).to.be.an(Array);
+        expect(response).to.contain(2);
+        done();
       });
     });
   });
