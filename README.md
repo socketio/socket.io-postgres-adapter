@@ -7,29 +7,21 @@ The `@socket.io/postgres-adapter` package allows broadcasting packets between mu
   <img alt="Diagram of Socket.IO packets forwarded through PostgreSQL" src="./assets/adapter.png">
 </picture>
 
-Supported features:
-
-- [broadcasting](https://socket.io/docs/v4/broadcasting-events/)
-- [utility methods](https://socket.io/docs/v4/server-instance/#Utility-methods)
-  - [`socketsJoin`](https://socket.io/docs/v4/server-instance/#socketsJoin)
-  - [`socketsLeave`](https://socket.io/docs/v4/server-instance/#socketsLeave)
-  - [`disconnectSockets`](https://socket.io/docs/v4/server-instance/#disconnectSockets)
-  - [`fetchSockets`](https://socket.io/docs/v4/server-instance/#fetchSockets)
-  - [`serverSideEmit`](https://socket.io/docs/v4/server-instance/#serverSideEmit)
-
-Related packages:
-
-- Postgres emitter: https://github.com/socketio/socket.io-postgres-emitter/
-- Redis adapter: https://github.com/socketio/socket.io-redis-adapter/
-- Redis emitter: https://github.com/socketio/socket.io-redis-emitter/
-- MongoDB adapter: https://github.com/socketio/socket.io-mongo-adapter/
-- MongoDB emitter: https://github.com/socketio/socket.io-mongo-emitter/
-
 **Table of contents**
 
+- [Supported features](#supported-features)
 - [Installation](#installation)
 - [Usage](#usage)
 - [License](#license)
+
+## Supported features
+
+| Feature                         | `socket.io` version | Support                                        |
+|---------------------------------|---------------------|------------------------------------------------|
+| Socket management               | `4.0.0`             | :white_check_mark: YES (since version `0.1.0`) |
+| Inter-server communication      | `4.1.0`             | :white_check_mark: YES (since version `0.1.0`) |
+| Broadcast with acknowledgements | `4.5.0`             | :white_check_mark: YES (since version `0.3.0`) |
+| Connection state recovery       | `4.6.0`             | :x: NO                                         |
 
 ## Installation
 
