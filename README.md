@@ -32,13 +32,13 @@ npm install @socket.io/postgres-adapter
 ## Usage
 
 ```js
-const { Server } = require("socket.io");
-const { createAdapter } = require("@socket.io/postgres-adapter");
-const { Pool } = require("pg");
+import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/postgres-adapter";
+import pg from "pg";
 
 const io = new Server();
 
-const pool = new Pool({
+const pool = new pg.Pool({
   user: "postgres",
   host: "localhost",
   database: "postgres",
