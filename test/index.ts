@@ -72,14 +72,8 @@ describe("@socket.io/postgres-adapter", () => {
   });
 
   afterEach((done) => {
-    servers.forEach((server) => {
-      // @ts-ignore
-      server.httpServer.close();
-      server.of("/").adapter.close();
-    });
-    clientSockets.forEach((socket) => {
-      socket.disconnect();
-    });
+    servers.forEach((server) => server.close());
+    clientSockets.forEach((socket) => socket.disconnect());
     pool.end(done);
   });
 
@@ -100,10 +94,7 @@ describe("@socket.io/postgres-adapter", () => {
     });
 
     it("broadcasts to all clients in a namespace", (done) => {
-      const partialDone = times(3, () => {
-        servers.forEach((server) => server.of("/custom").adapter.close());
-        done();
-      });
+      const partialDone = times(3, done);
 
       servers.forEach((server) => server.of("/custom"));
 
