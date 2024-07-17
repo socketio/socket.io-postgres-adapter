@@ -1,13 +1,21 @@
 # History
 
-- [0.3.1](#031-2023-02-08) (Feb 2023)
-- [0.3.0](#030-2022-04-28) (Apr 2022)
-- [0.2.0](#020-2021-12-16) (Dev 2021)
-- [0.1.1](#011-2021-06-28) (Jun 2021)
-- [0.1.0](#010-2021-06-14) (Jun 2021)
-
+| Version                  | Release date  |
+|--------------------------|---------------|
+| [0.4.0](#040-2024-07-17) | July 2024     |
+| [0.3.1](#031-2023-02-08) | February 2023 |
+| [0.3.0](#030-2022-04-28) | April 2022    |
+| [0.2.0](#020-2021-12-16) | December 2021 |
+| [0.1.1](#011-2021-06-28) | June 2021     |
+| [0.1.0](#010-2021-06-14) | June 2021     |
 
 # Release notes
+
+## [0.4.0](https://github.com/socketio/socket.io-postgres-adapter/compare/0.3.1...0.4.0) (2024-07-17)
+
+This release contains an important refactor of the adapter ([this commit](https://github.com/socketio/socket.io-postgres-adapter/commit/f783d4c568d232c40e47770e15763e97a77ed338)), as most of the logic has been moved in the `ClusterAdapter` class of the `socket.io-adapter` package.
+
+
 
 ## [0.3.1](https://github.com/socketio/socket.io-postgres-adapter/compare/0.3.0...0.3.1) (2023-02-08)
 
