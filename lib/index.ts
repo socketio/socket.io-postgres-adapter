@@ -45,11 +45,6 @@ const hasBinary = (obj: any, toJSON?: boolean): boolean => {
 
 export interface PostgresAdapterOptions {
   /**
-   * the name of this node
-   * @default a random id
-   */
-  uid: string;
-  /**
    * The prefix of the notification channel
    * @default "socket.io"
    */
@@ -64,11 +59,6 @@ export interface PostgresAdapterOptions {
    * @default 8000
    */
   payloadThreshold: number;
-  /**
-   * after this timeout the adapter will stop waiting from responses to request
-   * @default 5000
-   */
-  requestsTimeout: number;
   /**
    * Number of ms between two cleanup queries
    * @default 30000
