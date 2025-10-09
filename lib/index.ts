@@ -8,8 +8,9 @@ import type {
   Offset,
   ServerId,
 } from "socket.io-adapter";
+import debugModule from "debug";
 
-const debug = require("debug")("socket.io-postgres-adapter");
+const debug = debugModule("socket.io-postgres-adapter");
 
 const hasBinary = (obj: any, toJSON?: boolean): boolean => {
   if (!obj || typeof obj !== "object") {
