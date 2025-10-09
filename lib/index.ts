@@ -103,10 +103,11 @@ export function createAdapter(
   let isConnectionInProgress = false;
   let client: PoolClient | undefined;
   let cleanupTimer: NodeJS.Timeout;
+  let reconnectTimer: NodeJS.Timeout;
 
   const scheduleReconnection = () => {
     const reconnectionDelay = Math.floor(2000 * (0.5 + Math.random()));
-    setTimeout(initClient, reconnectionDelay);
+    reconnectTimer = setTimeout(initClient, reconnectionDelay);
   };
 
   const initClient = async () => {
@@ -184,9 +185,8 @@ export function createAdapter(
           client.release();
           client = undefined;
         }
-        if (cleanupTimer) {
-          clearTimeout(cleanupTimer);
-        }
+        clearTimeout(reconnectTimer);
+        clearTimeout(cleanupTimer);
       }
 
       defaultClose.call(adapter);
