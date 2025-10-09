@@ -13,7 +13,7 @@ describe("@socket.io/postgres-adapter", () => {
   let servers: Server[],
     serverSockets: ServerSocket[],
     clientSockets: ClientSocket[],
-    pool;
+    pool: Pool;
 
   beforeEach((done) => {
     servers = [];

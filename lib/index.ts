@@ -1,5 +1,5 @@
 import { encode, decode } from "@msgpack/msgpack";
-import { Pool } from "pg";
+import { type Pool, type PoolClient, type Notification } from "pg";
 import { ClusterAdapterWithHeartbeat, MessageType } from "socket.io-adapter";
 import type {
   ClusterAdapterOptions,
@@ -101,8 +101,8 @@ export function createAdapter(
 
   const channelToAdapters = new Map<string, PostgresAdapter>();
   let isConnectionInProgress = false;
-  let client: any;
-  let cleanupTimer: NodeJS.Timer;
+  let client: PoolClient | undefined;
+  let cleanupTimer: NodeJS.Timeout;
 
   const scheduleReconnection = () => {
     const reconnectionDelay = Math.floor(2000 * (0.5 + Math.random()));
@@ -120,11 +120,11 @@ export function createAdapter(
         await client.query(`LISTEN "${channel}"`);
       }
 
-      client.on("notification", async (msg: any) => {
+      client.on("notification", async (msg: Notification) => {
         try {
           await channelToAdapters.get(msg.channel)?.onEvent(msg.payload);
         } catch (err) {
-          errorHandler(err);
+          errorHandler(err as Error);
         }
       });
 
@@ -137,7 +137,7 @@ export function createAdapter(
         scheduleReconnection();
       });
     } catch (err) {
-      errorHandler(err);
+      errorHandler(err as Error);
       debug("error while initializing client, scheduling reconnection...");
       scheduleReconnection();
     }
@@ -150,7 +150,7 @@ export function createAdapter(
           `DELETE FROM ${tableName} WHERE created_at < now() - interval '${cleanupInterval} milliseconds'`
         );
       } catch (err) {
-        errorHandler(err);
+        errorHandler(err as Error);
       }
       scheduleCleanup();
     }, cleanupInterval);
@@ -182,7 +182,7 @@ export function createAdapter(
         if (client) {
           client.removeAllListeners("end");
           client.release();
-          client = null;
+          client = undefined;
         }
         if (cleanupTimer) {
           clearTimeout(cleanupTimer);
@@ -288,7 +288,7 @@ export class PostgresAdapter extends ClusterAdapterWithHeartbeat {
         payload,
       ]);
     } catch (err) {
-      this.errorHandler(err);
+      this.errorHandler(err as Error);
     }
   }
 
