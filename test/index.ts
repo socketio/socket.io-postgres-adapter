@@ -1,81 +1,23 @@
-import { createServer } from "http";
-import { Server, Socket as ServerSocket } from "socket.io";
-import { io as ioc, Socket as ClientSocket } from "socket.io-client";
-import expect = require("expect.js");
-import { createAdapter } from "../lib";
-import type { AddressInfo } from "net";
-import { times, sleep, shouldNotHappen } from "./util";
-import { Pool } from "pg";
-
-const NODES_COUNT = 3;
+import { type Server, type Socket as ServerSocket } from "socket.io";
+import { type Socket as ClientSocket } from "socket.io-client";
+import expect from "expect.js";
+import { setup, times, sleep, shouldNotHappen } from "./util";
 
 describe("@socket.io/postgres-adapter", () => {
   let servers: Server[],
     serverSockets: ServerSocket[],
     clientSockets: ClientSocket[],
-    pool: Pool;
+    cleanup: () => void;
 
-  beforeEach((done) => {
-    servers = [];
-    serverSockets = [];
-    clientSockets = [];
-    pool = new Pool({
-      user: "postgres",
-      host: "localhost",
-      database: "postgres",
-      password: "changeit",
-      port: 5432,
-    });
-
-    pool.query(
-      `
-      CREATE TABLE IF NOT EXISTS events (
-          id          bigserial UNIQUE,
-          created_at  timestamptz DEFAULT NOW(),
-          payload     bytea
-      );
-    `,
-      () => {}
-    );
-
-    for (let i = 1; i <= NODES_COUNT; i++) {
-      const httpServer = createServer();
-      const io = new Server(httpServer);
-      io.adapter(
-        createAdapter(pool, {
-          tableName: "events",
-        })
-      );
-      httpServer.listen(() => {
-        const port = (httpServer.address() as AddressInfo).port;
-        const clientSocket = ioc(`http://localhost:${port}`);
-
-        io.on("connection", async (socket) => {
-          clientSockets.push(clientSocket);
-          serverSockets.push(socket);
-          servers.push(io);
-          if (servers.length === NODES_COUNT) {
-            await sleep(200);
-
-            // ensure all nodes know each other
-            servers[0].emit("ping");
-            servers[1].emit("ping");
-            servers[2].emit("ping");
-
-            await sleep(200);
-
-            done();
-          }
-        });
-      });
-    }
+  beforeEach(async () => {
+    const testContext = await setup();
+    servers = testContext.servers;
+    serverSockets = testContext.serverSockets;
+    clientSockets = testContext.clientSockets;
+    cleanup = testContext.cleanup;
   });
 
-  afterEach((done) => {
-    servers.forEach((server) => server.close());
-    clientSockets.forEach((socket) => socket.disconnect());
-    pool.end(done);
-  });
+  afterEach(() => cleanup());
 
   describe("broadcast", function () {
     it("broadcasts to all clients", (done) => {
@@ -320,7 +262,7 @@ describe("@socket.io/postgres-adapter", () => {
       servers[0].disconnectSockets();
     });
 
-    it.skip("sends a packet before all socket instances disconnect", (done) => {
+    it("sends a packet before all socket instances disconnect", (done) => {
       const partialDone = times(3, done);
 
       clientSockets.forEach((clientSocket) => {
