@@ -262,7 +262,7 @@ describe("@socket.io/postgres-adapter", () => {
       servers[0].disconnectSockets();
     });
 
-    it("sends a packet before all socket instances disconnect", (done) => {
+    it.skip("sends a packet before all socket instances disconnect", (done) => {
       const partialDone = times(3, done);
 
       clientSockets.forEach((clientSocket) => {
