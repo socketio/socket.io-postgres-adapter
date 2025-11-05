@@ -9,10 +9,15 @@ The `@socket.io/postgres-adapter` package allows broadcasting packets between mu
 
 **Table of contents**
 
-- [Supported features](#supported-features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [License](#license)
+<!-- TOC -->
+  * [Supported features](#supported-features)
+  * [Installation](#installation)
+  * [Usage](#usage)
+    * [Standalone](#standalone)
+    * [With Node.js cluster](#with-nodejs-cluster)
+  * [Options](#options)
+  * [License](#license)
+<!-- TOC -->
 
 ## Supported features
 
@@ -30,6 +35,8 @@ npm install @socket.io/postgres-adapter
 ```
 
 ## Usage
+
+### Standalone
 
 ```js
 import { Server } from "socket.io";
@@ -61,6 +68,60 @@ pool.on("error", (err) => {
 io.adapter(createAdapter(pool));
 io.listen(3000);
 ```
+
+### With Node.js cluster
+
+```js
+import cluster from "node:cluster";
+import { createServer } from "node:http";
+import { availableParallelism } from "node:os";
+import { Server } from "socket.io";
+import { setupPrimary } from "@socket.io/postgres-adapter"
+import { createAdapter } from "@socket.io/cluster-adapter";
+import pg from "pg";
+
+if (cluster.isPrimary) {
+  const pool = new pg.Pool({
+    user: "postgres",
+    password: "changeit",
+  });
+  
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS socket_io_attachments (
+        id          bigserial UNIQUE,
+        created_at  timestamptz DEFAULT NOW(),
+        payload     bytea
+    );
+  `);
+
+  setupPrimary(pool);
+
+  for (let i = 0; i < availableParallelism(); i++) {
+    cluster.fork();
+  }
+} else {
+  const io = new Server({
+    adapter: createAdapter(),
+  });
+
+  io.on("connection", (socket) => {
+    /* ... */
+  });
+
+  io.listen(3000);
+}
+```
+
+## Options
+
+| Name                | Description                                                                                                | Default value           |
+|---------------------|------------------------------------------------------------------------------------------------------------|-------------------------|
+| `channelPrefix`     | The prefix of the notification channel.                                                                    | `socket.io`             |
+| `tableName`         | The name of the table for payloads over the 8000 bytes limit or containing binary data.                    | `socket_io_attachments` |
+| `payloadThreshold`  | The threshold for the payload size in bytes (see https://www.postgresql.org/docs/current/sql-notify.html). | `8_000`                 |
+| `cleanupInterval`   | Number of ms between two cleanup queries.                                                                  | `30_000`                |
+| `heartbeatInterval` | The number of ms between two heartbeats.                                                                   | `5_000`                 |
+| `heartbeatTimeout`  | The number of ms without heartbeat before we consider a node down.                                         | `10_000`                |
 
 ## License
 
