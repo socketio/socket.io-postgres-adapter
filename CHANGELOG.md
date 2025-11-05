@@ -2,6 +2,7 @@
 
 | Version                  | Release date  |
 |--------------------------|---------------|
+| [0.5.0](#050-2025-11-05) | November 2025 |
 | [0.4.0](#040-2024-07-17) | July 2024     |
 | [0.3.1](#031-2023-02-08) | February 2023 |
 | [0.3.0](#030-2022-04-28) | April 2022    |
@@ -10,6 +11,20 @@
 | [0.1.0](#010-2021-06-14) | June 2021     |
 
 # Release notes
+
+# [0.5.0](https://github.com/socketio/socket.io-postgres-adapter/compare/0.4.0...0.5.0) (2025-11-05)
+
+
+### Bug Fixes
+
+* properly release the client when calling io.close() ([c00716d](https://github.com/socketio/socket.io-postgres-adapter/commit/c00716dc08b54aa80c3fd6b06b4ccb31150047ed))
+
+
+### Features
+
+* allow using the adapter within a Node.js cluster ([18a917f](https://github.com/socketio/socket.io-postgres-adapter/commit/18a917f19689b57090add1386bb3269d85a942e6)
+
+
 
 ## [0.4.0](https://github.com/socketio/socket.io-postgres-adapter/compare/0.3.1...0.4.0) (2024-07-17)
 
