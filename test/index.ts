@@ -341,7 +341,7 @@ describe("@socket.io/postgres-adapter", () => {
     });
 
     it("sends an event but timeout if one server does not respond", function (done) {
-      this.timeout(6000);
+      this.timeout(6000); // it's not currently possible to provide a timeout delay to the serverSideEmit() method
 
       servers[0].serverSideEmit("hello", (err: Error, response: any) => {
         expect(err.message).to.be("timeout reached: missing 1 responses");
