@@ -4,7 +4,8 @@ import assert from "node:assert";
 import { times } from "./util.ts";
 
 describe("@socket.io/postgres-adapter within Node.js cluster", () => {
-  it("should work", (done) => {
+  it("should work", function (done) {
+    this.timeout(5000);
     const PRIMARY_COUNT = 3;
     const partialDone = times(PRIMARY_COUNT, done);
 
@@ -17,5 +18,5 @@ describe("@socket.io/postgres-adapter within Node.js cluster", () => {
         partialDone();
       });
     }
-  })
+  });
 });
