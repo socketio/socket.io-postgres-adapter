@@ -170,7 +170,7 @@ export class PubSubClient {
       }
 
       const payload = JSON.stringify(message);
-      if (Buffer.byteLength(payload) > this.opts.payloadThreshold) {
+      if (Buffer.byteLength(payload) >= this.opts.payloadThreshold) {
         return this.publishWithAttachment(message);
       }
 
