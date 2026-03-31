@@ -55,6 +55,7 @@ function createServerAndClient(pool: Pool) {
 
 function isInitComplete(servers: Server[]) {
   return servers.every((server) => {
+    // @ts-expect-error nodesMap is private
     return server.of("/").adapter.nodesMap.size === servers.length - 1;
   });
 }
@@ -86,10 +87,11 @@ export async function setup() {
   const serverSockets = results.map(({ socket }) => socket);
   const clientSockets = results.map(({ clientSocket }) => clientSocket);
 
-  servers.forEach((server) => server.of("/").adapter.init());
+  for (let i = 0; !isInitComplete(servers) && i < 10; i++) {
+    // the nodes may have missed the INITIAL_HEARTBEAT message sent when the adapter is initialized, so we send it again
+    servers[0].of("/").adapter.init();
 
-  while (!isInitComplete(servers)) {
-    await sleep(20);
+    await sleep(50);
   }
 
   return {
